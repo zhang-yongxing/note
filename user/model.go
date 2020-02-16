@@ -8,25 +8,25 @@ import (
 // 用户
 type User struct {
 	// 用户id
-	UserID string `gorm:"column:user_id"`
+	UserID string `gorm:"type:varchar(32);primary_key"`
 	// 用户名称(账号)
-	UserName string `gorm:"column:user_name"`
+	UserName string `gorm:"type:varchar(20);not null;unique"`
 	// 密码
-	Password string `gorm:"column:password"`
+	Password string `gorm:"type:varchar(128);not null"`
 	// 昵称
-	NickName string `gorm:"column:nick_name"`
+	NickName string `gorm:"type:varchar(20);not null;unique"`
 	// 邮箱
-	Email string `gorm:"column:email"`
+	Email string `gorm:"type:varchar(50);not null"`
 	// 备注
-	Remark string `gorm:"column:remark"`
-	// 是否删除
-	IsActive bool `gorm:"column:is_active"`
+	Remark string `gorm:"type:varchar(100)"`
+	// 是否是活跃用户
+	IsActive bool `gorm:"not null;default:true"`
 	// 是否是超级用户
-	IsSuperuser bool `gorm:"column:is_superuser"`
+	IsSuperuser bool `gorm:"not null;default:false"`
 	// 创建时间
-	CreatedAt time.Time `gorm:"column:create_time"`
+	CreatedAt time.Time `gorm:"not null;column:create_time"`
 	// 更新时间
-	UpdatedAt time.Time `gorm:"column:update_time"`
+	UpdatedAt time.Time `gorm:"not null;column:update_time"`
 }
 
 func (User) TableName() string {

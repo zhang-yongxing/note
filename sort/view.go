@@ -3,6 +3,7 @@ package sort
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"log"
 	"time"
 	"zyx/note/db"
 	"zyx/note/utils"
@@ -21,10 +22,13 @@ func AddSort(c *gin.Context)  {
 	var sort Sort
 	sort.SortID = utils.UStr32()
 	sort.SortName = AddSortForm.SortName
-	sort.UserID = c.Request.Header["user_id"][0]
+	sort.UserID = c.Param("user_id")
 	sort.UpdatedAt = time.Now()
 	sort.CreatedAt = time.Now()
-	dbc.Create(&sort)
+	dbErr := dbc.Create(&sort).Error
+	if dbErr != nil{
+		c.Status(500)
+	}
 	c.JSON(201, gin.H{
 		"sort_id": sort.SortID,
 		"created_time": utils.DatetimeToTimestamp(sort.CreatedAt),
@@ -44,15 +48,52 @@ func AlterSort(c *gin.Context){
 	dbc := db.DB
 	var sort Sort
 	var count int64
-	dbc.Where("sort_name = ? and user_id = ?", ALterSortForm.SortName, UserID).Count(&count)
-	dbc.Where("sort_id = ? ", SortID).Find(&sort)
-	dbc.Model(&sort).Update(map[string]interface{}{"sort_name": ALterSortForm.SortName})
+	var dbErr error
+	dbErr = dbc.Where("sort_name = ? and user_id = ?", ALterSortForm.SortName, UserID).Count(&count).Error
+	if dbErr != nil && dbErr.Error() != "record not found"{
+		c.Status(500)
+		return
+	}
+	dbErr = dbc.Where("sort_id = ? ", SortID).Find(&sort).Error
+	if dbErr.Error() == "record not found"{
+		c.Status(404)
+		return
+	}else if dbErr != nil{
+		c.Status(500)
+		return
+	}
+	dbErr = dbc.Model(&sort).Update(map[string]interface{}{"sort_name": ALterSortForm.SortName}).Error
+	if dbErr != nil{
+		c.Status(500)
+		return
+	}
 	c.Status(204)
 }
 
 func DelSort(c *gin.Context){
 	SortID := c.Param("sort_id")
 	dbc := db.DB
-	dbc.Where("sort_id = ?", SortID).Delete(Sort{})
+	dbErr := dbc.Where("sort_id = ?", SortID).Delete(Sort{}).Error
+	if dbErr != nil{
+		c.Status(500)
+		return
+	}
 	c.Status(204)
+}
+
+func Test(c *gin.Context){
+	var sort Sort
+	//var user1 user.User
+	dbc := db.DB
+	err := dbc.Where("sort_id = ?", "b1cf829af8ff4113b4371d81efc24c0b").
+		Preload("User").Find(&sort).Error
+
+
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Println(sort)
+	fmt.Println("------------------------------------------------")
+	fmt.Println(sort.User)
+	c.JSON(201,&sort)
 }

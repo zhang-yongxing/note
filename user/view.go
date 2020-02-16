@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"log"
 	"net/http"
 	"time"
 	"zyx/note/db"
@@ -21,8 +22,16 @@ func AddUsers(c *gin.Context){
 	}
 	var user User
 	var count int
+	var dbErr error
 	dbc:=db.DB
-	dbc.Where("user_name = ?", userForm.UserName).Or("nick_name = ?", userForm.NickName).Find(&user).Count(&count)
+	dbErr = dbc.Where("user_name = ?", userForm.UserName).Or("nick_name = ?", userForm.NickName).Find(&user).Count(&count).Error
+	if dbErr != nil && dbErr.Error() != "record not found"{
+		log.Println(dbErr)
+		log.Println(dbErr.Error() == "record not found")
+		log.Printf("%T",dbErr.Error())
+		c.Status(500)
+		return
+	}
 	if count>= 1{
 		if user.UserName == userForm.UserName{
 			c.JSON(422, gin.H{
@@ -55,7 +64,12 @@ func AddUsers(c *gin.Context){
 	user.IsActive = true
 	user.IsSuperuser = false
 	user.UpdatedAt = time.Now()
-	dbc.Create(&user)
+	dbErr = dbc.Create(&user).Error
+	if dbErr != nil{
+		log.Println(dbErr)
+		c.Status(500)
+		return
+	}
 	c.JSON(201, gin.H{
 		"user_id": user.UserID,
 		"created_time": utils.DatetimeToTimestamp(user.CreatedAt),
@@ -117,7 +131,12 @@ func GetOwnUserInfo(c *gin.Context)  {
 	userID := c.Request.Header["user_id"][0]
 	dbc := db.DB
 	var user User
-	dbc.Where("user_id = ?", userID).Find(&user)
+	var count int
+	dbc.Where("user_id = ?", userID).Count(count).Find(&user)
+	if count == 0{
+		c.Status(500)
+		return
+	}
 	c.JSON(200, user.UserToWeb())
 }
 // 用户退出
@@ -156,16 +175,27 @@ func AlterUsers(c *gin.Context){
 	}
 	dbc := db.DB
 	var count int64
-	dbc.Where("nick_name = ?", AlterUserForm.NickName).Count(&count)
+	var dbErr error
+	dbErr = dbc.Where("nick_name = ?", AlterUserForm.NickName).Count(&count).Error
 	if count != 0{
 		c.JSON(422, gin.H{
 			"errors": "nick_name already exists",
 		})
 		return
 	}
-
+	if dbErr != nil && dbErr.Error() != "record not found"{
+		c.Status(500)
+		return
+	}
 	var user User
-	dbc.Where("user_id = ?", userID).Find(&user)
+	dbErr = dbc.Where("user_id = ?", userID).Find(&user).Error
+	if dbErr != nil && dbErr.Error() == "record not found"{
+		c.Status(404)
+		return
+	}else if dbErr != nil{
+		c.Status(500)
+		return
+	}
 	dbc.Model(&user).Update(map[string]interface{}{"nick_name":AlterUserForm.NickName, "remark":AlterUserForm.Remark})
 	c.Status(204)
 }
