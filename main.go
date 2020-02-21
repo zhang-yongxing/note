@@ -6,6 +6,7 @@ import (
 	"zyx/note/sort"
 	study_note "zyx/note/study-note"
 	"zyx/note/user"
+	"zyx/note/utils"
 )
 
 func main()  {
@@ -40,6 +41,7 @@ func main()  {
 	 //}()
 
 	 r := gin.Default()
+	 r.Use(utils.Cors())
 	 // 创建用户
 	 r.POST("/users", user.AddUsers)
 	 // 用户登录
@@ -65,7 +67,7 @@ func main()  {
 	 r.GET("/sorts/:sort_id/notes/:note_id", middleware.LoginAuthentication(), study_note.GetNoteDetail)
 	 // 获取公开笔记详情
 	 r.GET("/sorts/:sort_id/notes/:note_id/public",study_note.GetPublicNoteDetail)
-	 // 获取自己的笔记列表
+	 // 获取公开的笔记列表
 	 r.GET("/sorts/:sort_id/notes",study_note.GetPublicNoteDetail)
 	 err := r.Run("0.0.0.0:8000")
 	 if err!=nil{

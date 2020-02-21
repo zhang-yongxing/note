@@ -13,9 +13,16 @@ import (
 
 // 创建用户
 func AddUsers(c *gin.Context){
+	//buf := make([]byte, 1024)
+	//n, _ := c.Request.Body.Read(buf)
+	//fmt.Println(string(buf[0:n]))
+
 	var userForm AddUserForm
 	if err:=c.ShouldBindJSON(&userForm); err!=nil{
+		fmt.Println(userForm)
+		fmt.Println(err.Error())
 		errs := fmt.Sprintf("%v", err)
+		fmt.Println(errs)
 		c.JSON(422, gin.H{
 			"error": errs})
 		return

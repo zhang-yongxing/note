@@ -38,3 +38,4 @@ func LoginAuthentication() gin.HandlerFunc{
 		context.Next()
 	}
 }
+
