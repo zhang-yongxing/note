@@ -42,33 +42,39 @@ func main()  {
 
 	 r := gin.Default()
 	 r.Use(utils.Cors())
-	 // 创建用户
-	 r.POST("/users", user.AddUsers)
+	 gr := r.Group("/api")
+	 // 创建用户 停用
+	 gr.POST("/users", user.AddUsers)
 	 // 用户登录
-	 r.POST("/login", user.LoginUsers)
+	 gr.POST("/login", user.LoginUsers)
 	 // 获取用户信息
-	 r.GET("/user", middleware.LoginAuthentication(), user.GetOwnUserInfo)
+	 gr.GET("/user", middleware.LoginAuthentication(), user.GetOwnUserInfo)
 	 // 用户退出
-	 r.POST("/logout", middleware.LoginAuthentication(), user.LogoutUsers)
-	 // 修改用户信息
-	 r.POST("/users/:user_id", middleware.LoginAuthentication(), user.AlterUsers)
+	 gr.POST("/logout", middleware.LoginAuthentication(), user.LogoutUsers)
+	 // 修改用户信息 停用
+	 gr.PUT("/users/:user_id", middleware.LoginAuthentication(), user.AlterUsers)
 	 //r.GET("/test", middleware.LoginAuthentication(), user.Test)
+	 //获取分类列表
+	 gr.GET("/sorts", middleware.LoginAuthentication(), sort.GetSortList)
 	 // 创建分类
-	 r.POST("/users/:user_id/sorts", middleware.LoginAuthentication(), sort.AddSort)
+	 gr.POST("/sorts", middleware.LoginAuthentication(), sort.AddSort)
 	 // 修改分类
-	 r.PUT("/users/:user_id/sorts/:sort_id", middleware.LoginAuthentication(), sort.AlterSort)
+	 gr.PUT("/sort_id", middleware.LoginAuthentication(), sort.AlterSort)
 	 // 删除分类
-	 r.DELETE("/users/:user_id/sorts/:sort_id", middleware.LoginAuthentication(), sort.DelSort)
+	 gr.DELETE("/sort_id", middleware.LoginAuthentication(), sort.DelSort)
 	 //r.GET("/test", sort.Test)
-	 r.POST("/sorts/:sort_id/notes", middleware.LoginAuthentication(), study_note.AddNote)
+	 // 添加笔记
+	 gr.POST("/sorts/:sort_id/notes", middleware.LoginAuthentication(), study_note.AddNote)
 	 // 修改笔记
-	 r.PUT("/sorts/:sort_id/notes/:note_id", middleware.LoginAuthentication(), study_note.AlterNote)
+	 gr.PUT("/sorts/:sort_id/notes/:note_id", middleware.LoginAuthentication(), study_note.AlterNote)
 	 // 获取自己的笔记详情
-	 r.GET("/sorts/:sort_id/notes/:note_id", middleware.LoginAuthentication(), study_note.GetNoteDetail)
+	 //gr.GET("/sorts/:sort_id/notes/:note_id", middleware.LoginAuthentication(), study_note.GetNoteDetail)
 	 // 获取公开笔记详情
-	 r.GET("/sorts/:sort_id/notes/:note_id/public",study_note.GetPublicNoteDetail)
+	 //gr.GET("/sorts/:sort_id/notes/:note_id/public", study_note.GetPublicNoteDetail)
 	 // 获取公开的笔记列表
-	 r.GET("/sorts/:sort_id/notes",study_note.GetPublicNoteDetail)
+	 //gr.GET("/users/:user_id/notes", study_note.GetPublicNoteDetail)
+	 // 获取用户笔记列表
+	 gr.GET("/notes", study_note.GetNoteList)
 	 err := r.Run("0.0.0.0:8000")
 	 if err!=nil{
 	 	panic(err)

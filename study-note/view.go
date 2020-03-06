@@ -105,19 +105,22 @@ func GetPublicNoteDetail(c *gin.Context)  {
 	c.JSON(200, note.NoteToWeb())
 }
 
-// 用户获取自己的笔记列表
+// 用户获取的笔记列表
 func GetNoteList(c *gin.Context)  {
-	dbc := db.DB
-	var note Note
-	var dbErr error
-	NoteId := c.Param("note_id")
-	dbErr = dbc.Where("note_id = ? AND is_deleted = ?", NoteId, false).Preload("Sort").Find(&note).Error
-	if dbErr != nil && dbErr.Error() == "record not found"{
-		c.Status(404)
-		return
-	}else if dbErr != nil{
-		c.Status(500)
-		return
-	}
-	c.JSON(200, note.NoteToWeb())
+	//UserId := c.Param("user_id")
+	//dbc := db.DB
+	//var sorts []sort.Sort
+	////var note Note
+	//dbErr := dbc.Where("user_id = ?", UserId).Preload("Note").Find(&sorts).Error
+	//fmt.Println(sorts)
+	//if dbErr != nil && dbErr.Error() == "record not found"{
+	//	c.Status(404)
+	//	return
+	//}else if dbErr != nil{
+	//	c.Status(500)
+	//	return
+	//}
+	//sorts := make([]sort.Sort,0)
+	//fmt.Println(sorts)
+	//c.JSON(200, sorts)
 }

@@ -1,6 +1,7 @@
 package sort
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -9,7 +10,41 @@ import (
 	"zyx/note/utils"
 )
 
-func AddSort(c *gin.Context)  {
+func GetSortList(c *gin.Context){
+	var sorts []Sort
+	userID := c.Request.Header["user_id"][0]
+	dbc:=db.DB
+	dErr := dbc.Where("user_id = ?",userID).Order("create_time desc").Find(&sorts).Error
+	if dErr !=nil && dErr.Error() == "record not found" {
+		sorts := make([]Sort,0)
+		c.JSON(200, sorts)
+		return
+	}else if dErr !=nil {
+		c.Status(500)
+		return
+	}
+	sList := make([]map[string]interface{}, len(sorts))
+	for i,v :=range sorts{
+		sList[i] = v.SortToWeb()
+	}
+	data, err := json.Marshal(sList)
+	if err != nil {
+		fmt.Printf("序列化错误 err=%v\n",err)
+	}
+	//输出序列化之后的结果
+	fmt.Printf("序列化后=%v\n",string(data))
+
+	fmt.Println(sList)
+	//c.JSON(200,gin.H{
+	//	"status":"success",
+	//	"data": sList,
+	//})
+	c.Writer.Write(data)
+
+}
+
+func AddSort(c *gin.Context) {
+	userID := c.Request.Header["user_id"][0]
 	var AddSortForm AddSortForm
 	err := c.ShouldBindJSON(&AddSortForm)
 	if err != nil{
@@ -22,7 +57,7 @@ func AddSort(c *gin.Context)  {
 	var sort Sort
 	sort.SortID = utils.UStr32()
 	sort.SortName = AddSortForm.SortName
-	sort.UserID = c.Param("user_id")
+	sort.UserID = userID
 	sort.UpdatedAt = time.Now()
 	sort.CreatedAt = time.Now()
 	dbErr := dbc.Create(&sort).Error

@@ -115,12 +115,13 @@ func LoginUsers(c *gin.Context)  {
 	// 登录成功状态redis存储
 	uuidStr := utils.UStr32()
 	utils.RedisSet(uuidStr, user.UserID, 60*60*24*30 * time.Second)
+	log.Println("设置redis userid:",user.UserID)
 	// 设置cookie
 	cookie := http.Cookie{
 		Name:       "user_id",
 		Value:      uuidStr,
 		Path:       "",
-		Domain:     "",
+		Domain:     "www.note.com",
 		Expires:    time.Time{},
 		RawExpires: "",
 		MaxAge:     60*60*24*30,
@@ -131,6 +132,7 @@ func LoginUsers(c *gin.Context)  {
 		Unparsed:   nil,
 	}
 	http.SetCookie(c.Writer, &cookie)
+	//c.SetCookie("user_id", uuidStr, 3600, "/", "localhost", false, true)
 	c.JSON(204, "")
 }
 // 获取登录用户的信息
@@ -138,12 +140,18 @@ func GetOwnUserInfo(c *gin.Context)  {
 	userID := c.Request.Header["user_id"][0]
 	dbc := db.DB
 	var user User
-	var count int
-	dbc.Where("user_id = ?", userID).Count(count).Find(&user)
-	if count == 0{
+	//err := dbc.Where("user_id = ?", userID).Count(count).Find(&user).Error
+	err:=dbc.Where("user_id = ?", userID).Find(&user).Error
+	if err != nil{
+		fmt.Println(err)
+
+	}
+	if err != nil{
 		c.Status(500)
+		fmt.Println(err)
 		return
 	}
+
 	c.JSON(200, user.UserToWeb())
 }
 // 用户退出
@@ -154,10 +162,10 @@ func LogoutUsers(c *gin.Context){
 		Name:       "user_id",
 		Value:      "",
 		Path:       "",
-		Domain:     "",
+		Domain:     "www.note.com",
 		Expires:    time.Time{},
 		RawExpires: "",
-		MaxAge:     60*60*24*30,
+		MaxAge:     1,
 		Secure:     false,
 		HttpOnly:   false,
 		SameSite:   0,
@@ -176,14 +184,15 @@ func AlterUsers(c *gin.Context){
 	userID := c.Param("user_id")
 	if err := c.ShouldBindJSON(&AlterUserForm); err != nil{
 		c.JSON(422, gin.H{
-			"error": err,
+			"errors": err,
 		})
 		return
 	}
 	dbc := db.DB
 	var count int64
 	var dbErr error
-	dbErr = dbc.Where("nick_name = ?", AlterUserForm.NickName).Count(&count).Error
+	var cUser User
+	dbErr = dbc.Where("nick_name = ? and user_id != ?", AlterUserForm.NickName,userID).Find(&cUser).Count(&count).Error
 	if count != 0{
 		c.JSON(422, gin.H{
 			"errors": "nick_name already exists",

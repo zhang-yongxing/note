@@ -34,17 +34,17 @@ func init(){
 func RedisSet(key string, value interface{}, expiration time.Duration) {
 	statusCmd := RedisC.Set(key,value,expiration)
 	log.Printf("%v", statusCmd)
-	log.Println("设置值", key)
+	//log.Println("设置值", key)
 }
 
 func RedisGet(key string) *redis.StringCmd{
 	strCmd := RedisC.Get(key)
-	log.Printf("获取redis: key %v   ,value %v", key, strCmd)
+	//log.Printf("获取redis: key %v   ,value %v", key, strCmd)
 	return strCmd
 }
 
 func RedisDel(key string) *redis.IntCmd{
 	intCmd := RedisC.Del(key)
-	log.Printf("删除key %v", intCmd)
+	//log.Printf("删除key %v", intCmd)
 	return intCmd
 }

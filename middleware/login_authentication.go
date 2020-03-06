@@ -28,10 +28,11 @@ func LoginAuthentication() gin.HandlerFunc{
 			context.JSON(403, "Permission denied")
 			context.Abort()
 		}
+		log.Println("redis userid:", userSta)
 		sList := make([]string, 1)
 		sList[0] = userSta
 		cList := make([]string, 1)
-		cList[0] = "cv.Value"
+		cList[0] = cv.Value
 		header := context.Request.Header
 		header["user_id"] = sList
 		header["cookie_userid_key"] = cList
