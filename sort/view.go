@@ -1,7 +1,6 @@
 package sort
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -27,20 +26,56 @@ func GetSortList(c *gin.Context){
 	for i,v :=range sorts{
 		sList[i] = v.SortToWeb()
 	}
-	data, err := json.Marshal(sList)
-	if err != nil {
-		fmt.Printf("序列化错误 err=%v\n",err)
+	c.JSON(200, sList)
+
+}
+
+func GetDefaultSortList(c *gin.Context){
+	UserID := c.Query("user_id")
+	if UserID == "" {
+		c.JSON(422, gin.H{
+			"field": "user_id",
+			"error": "missing",
+		})
+		return
 	}
-	//输出序列化之后的结果
-	fmt.Printf("序列化后=%v\n",string(data))
+	dbc := db.DB
+	var sorts []Sort
+	dbErr:=dbc.Where("user_id = ?", UserID).Find(&sorts).Error
+	if dbErr != nil && dbErr.Error() == "record not found"{
+		sBlankList:=make([]map[string]interface{}, 0)
+		c.JSON(200, sBlankList)
+		return
+	}else if dbErr != nil{
+		c.Status(500)
+		return
+	}
+	sList := make([]map[string]interface{}, len(sorts))
+	for i, s := range sorts{
+		var count int
+		dbc.Table("note").Select("sort_id").
+			Where("sort_id = ?", s.SortID).Count(&count)
+		m := s.SortToWeb()
+		m["sort_count"] = count
+		sList[i] = m
+	}
+	c.JSON(200, sList)
+}
 
-	fmt.Println(sList)
-	//c.JSON(200,gin.H{
-	//	"status":"success",
-	//	"data": sList,
-	//})
-	c.Writer.Write(data)
-
+func GetSortDetail(c *gin.Context)  {
+	dbc := db.DB
+	var sort Sort
+	var dbErr error
+	SortId := c.Param("sort_id")
+	dbErr = dbc.Where("sort_id = ?", SortId).Find(&sort).Error
+	if dbErr != nil && dbErr.Error() == "record not found"{
+		c.Status(404)
+		return
+	}else if dbErr != nil{
+		c.Status(500)
+		return
+	}
+	c.JSON(200, sort.SortToWeb())
 }
 
 func AddSort(c *gin.Context) {

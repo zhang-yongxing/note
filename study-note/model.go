@@ -28,6 +28,11 @@ type Note struct {
 	UpdatedAt time.Time `gorm:"not null;column:update_time"`
 }
 
+type NoteWeb struct {
+	Note
+	SortName string
+}
+
 func (Note) TableName() string {
 	return "note"
 }
@@ -39,8 +44,22 @@ func (n Note)NoteToWeb() map[string]interface{}{
 	m["note_name"] = n.NoteName
 	m["note_des"] = n.NoteDes
 	m["note_content"] = n.NoteContent
-	m["sort"] = n.Sort.SortToWeb()
+	m["sort_id"] = n.SortId
 	m["create_time"] = utils.DatetimeToTimestamp(n.CreatedAt)
 	m["update_time"] = utils.DatetimeToTimestamp(n.UpdatedAt)
 	return m
 }
+
+func (n NoteWeb)NoteToWeb() map[string]interface{}{
+	m := make(map[string]interface{}, 9)
+	m["note_id"] = n.NoteId
+	m["note_name"] = n.NoteName
+	m["note_des"] = n.NoteDes
+	m["note_content"] = n.NoteContent
+	m["sort_id"] = n.SortId
+	m["sort_name"] = n.SortName
+	m["create_time"] = utils.DatetimeToTimestamp(n.CreatedAt)
+	m["update_time"] = utils.DatetimeToTimestamp(n.UpdatedAt)
+	return m
+}
+

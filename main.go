@@ -58,23 +58,30 @@ func main()  {
 	 gr.GET("/sorts", middleware.LoginAuthentication(), sort.GetSortList)
 	 // 创建分类
 	 gr.POST("/sorts", middleware.LoginAuthentication(), sort.AddSort)
-	 // 修改分类
-	 gr.PUT("/sort_id", middleware.LoginAuthentication(), sort.AlterSort)
-	 // 删除分类
-	 gr.DELETE("/sort_id", middleware.LoginAuthentication(), sort.DelSort)
+	 // 获取默认分类列表
+	 gr.GET("/default/sorts", sort.GetDefaultSortList)
+	 //// 修改分类
+	 //gr.PUT("/sort_id", middleware.LoginAuthentication(), sort.AlterSort)
+	 //// 删除分类
+	 //gr.DELETE("/sort_id", middleware.LoginAuthentication(), sort.DelSort)
+	 // 获取分类详情
+	 gr.GET("/sorts/:sort_id", middleware.LoginAuthentication(), sort.GetSortDetail)
 	 //r.GET("/test", sort.Test)
 	 // 添加笔记
 	 gr.POST("/sorts/:sort_id/notes", middleware.LoginAuthentication(), study_note.AddNote)
 	 // 修改笔记
 	 gr.PUT("/sorts/:sort_id/notes/:note_id", middleware.LoginAuthentication(), study_note.AlterNote)
-	 // 获取自己的笔记详情
-	 //gr.GET("/sorts/:sort_id/notes/:note_id", middleware.LoginAuthentication(), study_note.GetNoteDetail)
+	 // 获取默认笔记列表(分页)
+	 gr.GET("/default/notes", study_note.GetNoteDefault)
+	 // 获取笔记详情
+	 gr.GET("/notes/:note_id", study_note.GetNoteDetail)
 	 // 获取公开笔记详情
 	 //gr.GET("/sorts/:sort_id/notes/:note_id/public", study_note.GetPublicNoteDetail)
 	 // 获取公开的笔记列表
 	 //gr.GET("/users/:user_id/notes", study_note.GetPublicNoteDetail)
 	 // 获取用户笔记列表
-	 gr.GET("/notes", study_note.GetNoteList)
+	 gr.GET("/notes", middleware.LoginAuthentication(), study_note.GetNoteList)
+
 	 err := r.Run("0.0.0.0:8000")
 	 if err!=nil{
 	 	panic(err)

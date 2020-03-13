@@ -1,7 +1,9 @@
 package study_note
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"strconv"
 	"zyx/note/db"
 	"zyx/note/utils"
 )
@@ -31,12 +33,16 @@ func AddNote(c *gin.Context){
 		c.Status(500)
 		return
 	}
-	c.Status(204)
+	c.JSON(201,gin.H{
+		"note_id": note.NoteId,
+		"created_time": utils.DatetimeToTimestamp(note.CreatedAt),
+	})
 }
 
 
 func AlterNote(c *gin.Context){
 	NoteId := c.Param("note_id")
+	SortId := c.Param("sort_id")
 	var AlterNoteForm AlterNoteForm
 	if err := c.ShouldBindJSON(&AlterNoteForm); err!=nil{
 		c.JSON(422, gin.H{
@@ -63,6 +69,7 @@ func AlterNote(c *gin.Context){
 		"note_name":AlterNoteForm.NoteName,
 		"note_des":AlterNoteForm.NoteDes,
 		"note_content":AlterNoteForm.NoteContent,
+		"sort_id": SortId,
 	}).Error
 	if dbErr != nil{
 		c.Status(500)
@@ -71,13 +78,13 @@ func AlterNote(c *gin.Context){
 	c.Status(204)
 }
 
-// 用户获取自己的笔记
+// 用户获取的笔记详情
 func GetNoteDetail(c *gin.Context)  {
 	dbc := db.DB
 	var note Note
 	var dbErr error
 	NoteId := c.Param("note_id")
-	dbErr = dbc.Where("note_id = ? AND is_deleted = ?", NoteId, false).Preload("Sort").Find(&note).Error
+	dbErr = dbc.Where("note_id = ?", NoteId).Find(&note).Error
 	if dbErr != nil && dbErr.Error() == "record not found"{
 		c.Status(404)
 		return
@@ -107,20 +114,103 @@ func GetPublicNoteDetail(c *gin.Context)  {
 
 // 用户获取的笔记列表
 func GetNoteList(c *gin.Context)  {
-	//UserId := c.Param("user_id")
-	//dbc := db.DB
-	//var sorts []sort.Sort
-	////var note Note
-	//dbErr := dbc.Where("user_id = ?", UserId).Preload("Note").Find(&sorts).Error
-	//fmt.Println(sorts)
-	//if dbErr != nil && dbErr.Error() == "record not found"{
-	//	c.Status(404)
-	//	return
-	//}else if dbErr != nil{
-	//	c.Status(500)
-	//	return
-	//}
-	//sorts := make([]sort.Sort,0)
-	//fmt.Println(sorts)
-	//c.JSON(200, sorts)
+	userID := c.Request.Header["user_id"][0]
+	dbc := db.DB
+	var notes []Note
+	dbErr:=dbc.Table("note").
+		Select("note.note_id, note.note_name,note.note_content,note.sort_id").
+		Joins("left join sort on sort.sort_id = note.sort_id").
+		Where("sort.user_id = ?",userID).
+		Order("note.create_time desc, note.sort_id").
+		Find(&notes).Error
+	if dbErr != nil && dbErr.Error() == "record not found"{
+		c.Status(404)
+		return
+	}else if dbErr != nil{
+		c.Status(500)
+		return
+	}
+	nList := make([]map[string]interface{}, len(notes))
+	for i,v :=range notes{
+		nList[i] = v.NoteToWeb()
+	}
+	c.JSON(200,nList)
+}
+
+// 获取默认笔记列表（首页
+func GetNoteDefault(c *gin.Context)  {
+	UserID := c.Query("user_id")
+	PageNum := c.Query("page_num")
+	PageSize := c.Query("page_size")
+	SortID:= c.Query("sort_id")
+	if UserID == ""{
+		c.JSON(422,gin.H{
+			"field":"user_id",
+			"error":"missing",
+		})
+		return
+	}else if PageNum == ""{
+		c.JSON(422,gin.H{
+			"field":"page_num",
+			"error":"missing",
+		})
+		return
+	}else if PageSize == ""{
+		c.JSON(422,gin.H{
+			"field":"page_size",
+			"error":"missing",
+		})
+		return
+	}
+	PageNumInt,errN := strconv.Atoi(PageNum)
+	if errN!=nil{
+
+	}
+	PageSizeInt,errP := strconv.Atoi(PageSize)
+	if errP!=nil{
+
+	}
+	OffsetNumInt := (int(PageNumInt)-1) * int(PageSizeInt)
+	OffsetNum := strconv.Itoa(OffsetNumInt)
+	fmt.Println(PageSize)
+	fmt.Println(OffsetNum)
+	dbc := db.DB
+	var notes []NoteWeb
+	where := ""
+	if SortID == ""{
+		where = "sort.user_id = '"+UserID +"'"
+	}else {
+		where = "sort.user_id = '"+UserID+"' AND sort.sort_id = '"+SortID+"'"
+	}
+	fmt.Println(where)
+	//var notesC []NoteWeb
+	dbErr:=dbc.Table("note").
+		Select("note.note_id, note.note_name,note.note_content,note.sort_id,note.note_des,sort.sort_name, note.create_time").
+		Joins("left join sort on sort.sort_id = note.sort_id").
+		Where(where).
+		Order("note.create_time desc").
+		Limit(PageSize).
+		Offset(OffsetNum).
+		Find(&notes).
+		Error
+	var count int
+	dbc.Table("note").
+		Select("note.note_id, note.note_name,note.note_content,note.sort_id,note.note_des,sort.sort_name, note.create_time").
+		Joins("left join sort on sort.sort_id = note.sort_id").
+		Where("sort.user_id = ?",UserID).Count(&count)
+	if dbErr != nil && dbErr.Error() == "record not found"{
+		c.JSON(200,make([]map[string]interface{},0))
+		return
+	}else if dbErr != nil{
+		c.Status(500)
+		return
+	}
+	nList := make([]map[string]interface{}, len(notes))
+	for i,v :=range notes{
+		nList[i] = v.NoteToWeb()
+	}
+	c.JSON(200,gin.H{
+		"note_count":count,
+		"notes":nList,
+	})
 }
