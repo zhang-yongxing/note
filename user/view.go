@@ -121,7 +121,7 @@ func LoginUsers(c *gin.Context)  {
 		Name:       "user_id",
 		Value:      uuidStr,
 		Path:       "",
-		Domain:     "www.note.com",
+		Domain:     "",
 		Expires:    time.Time{},
 		RawExpires: "",
 		MaxAge:     60*60*24*30,
