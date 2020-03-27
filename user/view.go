@@ -120,7 +120,7 @@ func LoginUsers(c *gin.Context)  {
 	cookie := http.Cookie{
 		Name:       "user_id",
 		Value:      uuidStr,
-		Path:       "",
+		Path:       "/",
 		Domain:     "",
 		Expires:    time.Time{},
 		RawExpires: "",
@@ -162,7 +162,7 @@ func LogoutUsers(c *gin.Context){
 		Name:       "user_id",
 		Value:      "",
 		Path:       "",
-		Domain:     "www.note.com",
+		Domain:     "",
 		Expires:    time.Time{},
 		RawExpires: "",
 		MaxAge:     1,
